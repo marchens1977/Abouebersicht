@@ -22,7 +22,7 @@ const ZEITRAUM = {
 
 // ---------- Daten ----------
 let daten = laden();
-let ui = { zeitraum: 'monat', reiter: 'alle', suche: '', sort: 'preis', wennAus: new Set(), funde: [] };
+let ui = { zeitraum: 'monat', reiter: 'alle', suche: '', sort: 'preis', wennAus: new Set(), funde: [], umsaetze: [] };
 
 function laden() {
   try {
@@ -449,7 +449,7 @@ function renderFinden() {
 
     <div class="karte">
       <h2>📚 Aus Liste wählen</h2>
-      <p class="leise">Über 70 bekannte Dienste mit Richtpreisen. Antippen zum Eintragen.</p>
+      <p class="leise">Über 100 bekannte Dienste mit Richtpreisen. Antippen zum Eintragen.</p>
       <input type="search" id="katalog-suche" placeholder="🔍 z. B. Netflix, Claude, Spotify …">
       <div class="katalog-liste" id="katalog-liste"></div>
     </div>
@@ -470,6 +470,7 @@ function renderFinden() {
     if (!dateien.length) return;
     const status = $('#lese-status');
     let texte = [];
+    leseInfo = { seiten: 0 };
     try {
       for (const [i, datei] of dateien.entries()) {
         status.textContent = `⏳ Lese ${dateien.length > 1 ? `Datei ${i + 1} von ${dateien.length}` : 'Kontoauszug'} …`;
@@ -494,6 +495,7 @@ function renderFinden() {
 
 // PDF lesen – mit eingebautem pdf.js, komplett offline auf dem Handy
 let pdfjs = null;
+let leseInfo = { seiten: 0 };
 async function lesePDF(datei) {
   if (!pdfjs) {
     pdfjs = await import('./vendor/pdf.min.js');
@@ -508,6 +510,7 @@ async function lesePDF(datei) {
   let pdf;
   try { pdf = await aufgabe.promise; } catch (e) { if (aufgabe.destroyed) throw new Error('abgebrochen'); throw e; }
   const zeilen = [];
+  leseInfo.seiten += pdf.numPages;
   for (let n = 1; n <= pdf.numPages; n++) {
     const seite = await pdf.getPage(n);
     const inhalt = await seite.getTextContent();
@@ -518,10 +521,20 @@ async function lesePDF(datei) {
       const y = t.transform[5], x = t.transform[4];
       let z = proZeile.find((r) => Math.abs(r.y - y) < 3);
       if (!z) proZeile.push(z = { y, teile: [] });
-      z.teile.push({ x, s: t.str });
+      z.teile.push({ x, b: t.width || 0, h: Math.abs(t.transform[3]) || 10, s: t.str });
     }
     proZeile.sort((a, b) => b.y - a.y);
-    for (const z of proZeile) zeilen.push(z.teile.sort((a, b) => a.x - b.x).map((t) => t.s).join('  '));
+    for (const z of proZeile) {
+      // Manche Banken speichern jeden Buchstaben einzeln: Stücke ohne Abstand direkt aneinanderhängen
+      z.teile.sort((a, b) => a.x - b.x);
+      let zeile = '', ende = null;
+      for (const t of z.teile) {
+        const luecke = ende === null ? 0 : t.x - ende;
+        zeile += ende === null ? t.s : (luecke > t.h * 0.18 ? (luecke > t.h * 1.5 ? '   ' : ' ') : '') + t.s;
+        ende = t.x + t.b;
+      }
+      zeilen.push(zeile);
+    }
     seite.cleanup();
   }
   await aufgabe.destroy();   // PDF aus dem Speicher werfen
@@ -644,7 +657,10 @@ function leseFreitext(text) {
   const bloecke = [];
   let aktuell = null;
   for (const z of zeilen) {
-    if (DATUM_ANFANG.test(z)) bloecke.push(aktuell = [z]);
+    const hatBetrag = (z.match(BETRAG_RE) || []).length > 0;
+    // Zeile mit Datum, aber ohne Betrag direkt unter einer Buchung = Wertstellungs-Datum → gehört noch dazu
+    if (DATUM_ANFANG.test(z) && !hatBetrag && aktuell && aktuell.length === 1) aktuell.push(z);
+    else if (DATUM_ANFANG.test(z)) bloecke.push(aktuell = [z]);
     else if (aktuell && aktuell.length < 5) aktuell.push(z);
     else aktuell = null;
   }
@@ -696,22 +712,34 @@ function werteAus(text) {
   const rest = [];
   for (const u of umsaetze) {
     const t = ' ' + u.text.toLowerCase() + ' ' + u.name.toLowerCase() + ' ';
-    let bester = null, laenge = 0;
-    for (const k of KATALOG) for (const w of k.such) if (t.includes(w) && w.length > laenge) { bester = k; laenge = w.length; }
+    // Bestimmter Anbieter (z. B. „Allianz“) geht immer vor Sammel-Eintrag (z. B. „Versicherung (andere)“)
+    let bester = null, laenge = 0, sammel = null;
+    for (const k of KATALOG) for (const w of k.such) {
+      if (!t.includes(w)) continue;
+      if (/\(ander/.test(k.name)) { if (!sammel) sammel = k; }
+      else if (w.length > laenge) { bester = k; laenge = w.length; }
+    }
     if (bester) {
-      if (!gruppen.has(bester.name)) gruppen.set(bester.name, { k: bester, liste: [] });
+      if (!gruppen.has(bester.name)) gruppen.set(bester.name, { k: bester, name: bester.name, liste: [] });
       gruppen.get(bester.name).liste.push(u);
+    } else if (sammel) {
+      // Sammel-Eintrag: je Zahlungsempfänger getrennt, benannt nach dem Empfänger
+      const s = schluessel(u);
+      const name = s ? s.split(' ').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ') : sammel.name;
+      const key = sammel.name + '|' + name;
+      if (!gruppen.has(key)) gruppen.set(key, { k: sammel, name, liste: [] });
+      gruppen.get(key).liste.push(u);
     } else rest.push(u);
   }
 
   const funde = [];
-  for (const { k, liste } of gruppen.values()) {
+  for (const { k, name: gName, liste } of gruppen.values()) {
     liste.sort((a, b) => (b.datum || 0) - (a.datum || 0));
     const letzter = liste[0];
     let zyklus = rateZyklus(liste.map((u) => u.datum)) || k.zyklus;
     const naechste = letzter.datum ? zuText(zyklusDazu(letzter.datum, zyklus)) : '';
-    funde.push({ name: k.name, kat: k.kat, preis: Math.round(letzter.betrag * 100) / 100, zyklus, naechste,
-      info: `${liste.length}× gefunden · zuletzt ${datumDE(letzter.datum)}`, an: !istSchonDa(k.name), bekannt: true });
+    funde.push({ name: gName, kat: k.kat, preis: Math.round(letzter.betrag * 100) / 100, zyklus, naechste,
+      info: `${liste.length}× gefunden · zuletzt ${datumDE(letzter.datum)} · „${letzter.text.slice(0, 40)}“`, an: !istSchonDa(gName), bekannt: true });
   }
 
   // Unbekannte, aber regelmäßige Zahlungen
@@ -735,8 +763,21 @@ function werteAus(text) {
       naechste: gleich[0].datum ? zuText(zyklusDazu(gleich[0].datum, zyklus)) : '',
       info: `regelmäßig ${ZYKLEN[zyklus].name} · ${gleich.length}× · „${gleich[0].text.slice(0, 50)}“`, an: false, bekannt: false });
   }
+  // Nur einmal gesehen, aber Lastschrift/Dauerauftrag → wahrscheinlich regelmäßig (z. B. bei nur einem Monatsauszug)
+  const schonVorgeschlagen = new Set(funde.map((f) => f.name.toLowerCase()));
+  for (const [s, liste] of unbekannt) {
+    const u = liste[0];
+    const name = s.split(' ').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+    if (schonVorgeschlagen.has(name.toLowerCase())) continue;
+    if (!/lastschrift|dauerauftrag|mandat|gläubiger|glaeubiger|abbuchung|einzug/i.test(u.text)) continue;
+    if (/kartenzahlung|gutschrift|bargeld|geldautomat/i.test(u.text)) continue;
+    funde.push({ name, kat: 'sonstiges', preis: Math.round(u.betrag * 100) / 100, zyklus: 'monat',
+      naechste: u.datum ? zuText(zyklusDazu(u.datum, 'monat')) : '',
+      info: `Lastschrift/Dauerauftrag · ${datumDE(u.datum)} · „${u.text.slice(0, 50)}“`, an: false, bekannt: false });
+  }
   funde.sort((a, b) => (b.bekannt - a.bekannt) || (b.preis - a.preis));
   ui.funde = funde;
+  ui.umsaetze = umsaetze.slice().sort((a, b) => (b.datum || 0) - (a.datum || 0));
   renderFunde(umsaetze.length);
   window.scrollTo({ top: $('#funde').getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' });
 }
@@ -748,7 +789,13 @@ function renderFunde(anzahlUmsaetze) {
     el.innerHTML = anzahlUmsaetze ? `<p class="hinweis blau">${anzahlUmsaetze} Umsätze gelesen, aber keine Abos erkannt. Probier mehrere Monate auf einmal.</p>` : '';
     return;
   }
-  el.innerHTML = `<h2 style="margin-top:16px">Gefunden: ${ui.funde.length}</h2>
+  const gelesen = `<p class="hinweis blau">📄 ${leseInfo.seiten ? `${leseInfo.seiten} Seite${leseInfo.seiten === 1 ? '' : 'n'} gelesen · ` : ''}${ui.umsaetze.length} Abbuchungen erkannt</p>`;
+  const alle = ui.umsaetze.length ? `<details id="alle-umsaetze" style="margin-top:10px"><summary class="leise">Alle ${ui.umsaetze.length} gelesenen Abbuchungen ansehen (zum Prüfen)</summary>
+    <p class="leise">Fehlt ein Abo oben? Tippe hier auf <b>+</b>, um es zu übernehmen.</p>
+    ${ui.umsaetze.map((u, i) => `<div class="fund"><span class="fund-text"><b>${euro(u.betrag)}</b><small>${datumDE(u.datum)} · ${esc(u.text.slice(0, 90))}</small></span>
+      <button class="knopf hell" style="width:auto;margin:0;padding:8px 14px" data-plus="${i}">+</button></div>`).join('')}
+  </details>` : '';
+  el.innerHTML = gelesen + `<h2 style="margin-top:16px">Gefunden: ${ui.funde.length}</h2>
     <p class="leise">Haken setzen bei allem, was ein Abo ist. Danach kannst du jedes noch anpassen.</p>
     ${ui.funde.map((f, i) => `<label class="fund">
       <input type="checkbox" data-fund="${i}" ${f.an ? 'checked' : ''}>
@@ -757,8 +804,14 @@ function renderFunde(anzahlUmsaetze) {
         <small>${euro(f.preis)} ${esc(ZYKLEN[f.zyklus].name)} · ${esc(kat(f.kat).name)}</small><br><small>${esc(f.info)}</small></span>
     </label>`).join('')}
     <button class="knopf orange" id="funde-uebernehmen">✔ Ausgewählte übernehmen</button>
-    <button class="knopf hell" id="funde-verwerfen">🗑️ Ergebnisse verwerfen</button>`;
-  $('#funde-verwerfen').onclick = () => { ui.funde = []; renderFunde(); toast('Alles verworfen – nichts gespeichert'); };
+    <button class="knopf hell" id="funde-verwerfen">🗑️ Ergebnisse verwerfen</button>` + alle;
+  el.querySelectorAll('[data-plus]').forEach((b) => b.onclick = () => {
+    const u = ui.umsaetze[b.dataset.plus];
+    const vorschlag = schluessel(u).split(' ').filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+    oeffneFormular(null, { name: vorschlag, kat: 'sonstiges', preis: Math.round(u.betrag * 100) / 100, zyklus: 'monat',
+      naechste: u.datum ? zuText(zyklusDazu(u.datum, 'monat')) : '' });
+  });
+  $('#funde-verwerfen').onclick = () => { ui.funde = []; ui.umsaetze = []; renderFunde(); toast('Alles verworfen – nichts gespeichert'); };
   el.querySelectorAll('[data-fund]').forEach((c) => c.onchange = () => { ui.funde[c.dataset.fund].an = c.checked; });
   $('#funde-uebernehmen').onclick = () => {
     const neu = ui.funde.filter((f) => f.an && !istSchonDa(f.name));
@@ -767,7 +820,7 @@ function renderFunde(anzahlUmsaetze) {
       testEnde: '', kuendigung: '', notiz: 'Aus Kontoauszug erkannt',
       verlauf: [{ datum: zuText(heute()), text: `Aus Kontoauszug übernommen (${euro(f.preis)} ${ZYKLEN[f.zyklus].name})` }],
     }));
-    ui.funde = [];
+    ui.funde = []; ui.umsaetze = [];
     speichern();
     toast(neu.length ? `${neu.length} Abo${neu.length === 1 ? '' : 's'} übernommen ✔` : 'Nichts Neues ausgewählt');
     zeige(neu.length ? 'start' : 'finden');

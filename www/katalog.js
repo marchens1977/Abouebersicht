@@ -11,6 +11,8 @@ const KATEGORIEN = [
   { id: 'fitness',   name: 'Fitness & Gesundheit',icon: '💪' },
   { id: 'vertraege', name: 'Handy, Internet & Co.', icon: '📶' },
   { id: 'mobil',     name: 'Mobilität',           icon: '🚆' },
+  { id: 'versicherung', name: 'Versicherungen',    icon: '🛡️' },
+  { id: 'wohnen',    name: 'Wohnen & Energie',    icon: '🏠' },
   { id: 'sonstiges', name: 'Sonstiges',           icon: '📦' },
 ];
 
@@ -102,10 +104,42 @@ const KATALOG = [
   { name: 'Freeletics', kat: 'fitness', preis: 79.99, zyklus: 'jahr', such: ['freeletics'] },
 
   // Handy, Internet & Co.
-  { name: 'Handyvertrag', kat: 'vertraege', preis: 20.00, zyklus: 'monat', such: ['telekom', 'vodafone', 'o2 ', 'telefonica', 'congstar', '1&1', 'freenet', 'aldi talk', 'fraenk'] },
-  { name: 'Internet / DSL', kat: 'vertraege', preis: 40.00, zyklus: 'monat', such: [] },
+  { name: 'Telekom', kat: 'vertraege', preis: 39.95, zyklus: 'monat', such: ['telekom', 't-mobile'] },
+  { name: 'Vodafone', kat: 'vertraege', preis: 39.99, zyklus: 'monat', such: ['vodafone'] },
+  { name: 'O2', kat: 'vertraege', preis: 20.00, zyklus: 'monat', such: ['telefonica', ' o2 ', 'o2 germany'] },
+  { name: '1&1', kat: 'vertraege', preis: 29.99, zyklus: 'monat', such: ['1&1', '1und1', '1 & 1'] },
+  { name: 'congstar', kat: 'vertraege', preis: 15.00, zyklus: 'monat', such: ['congstar'] },
+  { name: 'freenet', kat: 'vertraege', preis: 15.00, zyklus: 'monat', such: ['freenet', 'mobilcom'] },
+  { name: 'ALDI TALK', kat: 'vertraege', preis: 9.99, zyklus: 'monat', such: ['aldi talk', 'medion mobile'] },
+  { name: 'fraenk', kat: 'vertraege', preis: 10.00, zyklus: 'monat', such: ['fraenk'] },
+  { name: 'Handyvertrag (anderer)', kat: 'vertraege', preis: 20.00, zyklus: 'monat', such: [] },
+  { name: 'Internet / DSL', kat: 'vertraege', preis: 40.00, zyklus: 'monat', such: ['pyur', 'netcologne', 'm-net', 'ewe tel', 'deutsche glasfaser'] },
   { name: 'Rundfunkbeitrag', kat: 'vertraege', preis: 55.08, zyklus: 'quartal', such: ['rundfunk', 'beitragsservice'] },
-  { name: 'Strom', kat: 'vertraege', preis: 60.00, zyklus: 'monat', such: [] },
+
+  // Versicherungen
+  { name: 'Allianz', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['allianz'] },
+  { name: 'HUK-COBURG', kat: 'versicherung', preis: 40.00, zyklus: 'monat', such: ['huk-coburg', 'huk coburg', 'huk24', 'huk-24'] },
+  { name: 'ERGO', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['ergo versicherung', 'ergo vorsorge', 'ergo direkt', 'dkv '] },
+  { name: 'AXA', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['axa '] },
+  { name: 'Debeka', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['debeka'] },
+  { name: 'DEVK', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['devk'] },
+  { name: 'Generali', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['generali'] },
+  { name: 'R+V Versicherung', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['r+v ', 'r + v', 'ruv '] },
+  { name: 'Signal Iduna', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['signal iduna'] },
+  { name: 'Württembergische', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['wuerttembergische', 'württembergische'] },
+  { name: 'LVM', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['lvm '] },
+  { name: 'Provinzial', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['provinzial'] },
+  { name: 'Gothaer', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['gothaer'] },
+  { name: 'Barmenia', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['barmenia'] },
+  { name: 'CosmosDirekt', kat: 'versicherung', preis: 10.00, zyklus: 'monat', such: ['cosmos'] },
+  { name: 'Versicherung (andere)', kat: 'versicherung', preis: 15.00, zyklus: 'monat', such: ['versicherung'] },
+
+  // Wohnen & Energie
+  { name: 'Stadtwerke', kat: 'wohnen', preis: 80.00, zyklus: 'monat', such: ['stadtwerke'] },
+  { name: 'E.ON', kat: 'wohnen', preis: 80.00, zyklus: 'monat', such: ['e.on', 'eon energie'] },
+  { name: 'Vattenfall', kat: 'wohnen', preis: 80.00, zyklus: 'monat', such: ['vattenfall'] },
+  { name: 'EnBW', kat: 'wohnen', preis: 80.00, zyklus: 'monat', such: ['enbw'] },
+  { name: 'Strom (anderer Anbieter)', kat: 'wohnen', preis: 60.00, zyklus: 'monat', such: ['eprimo', 'yello', 'tibber', 'ostrom', 'octopus energy', 'lichtblick', 'naturstrom', 'rwe '] },
 
   // Mobilität
   { name: 'Deutschlandticket', kat: 'mobil', preis: 63.00, zyklus: 'monat', such: ['deutschlandticket', 'd-ticket', 'deutschland-ticket'] },

@@ -22,6 +22,14 @@ Android-App (APK) für das Samsung-Smartphone des Nutzers: Kosten aller Abos ver
 - Knopf „Ergebnisse verwerfen“; gespeichert werden nur übernommene Abos (`localStorage`).
 - Test prüft: keine fremden Netzwerkanfragen beim PDF-Lesen.
 
+## 1b. Kontoauszug-Erkennung (Lehren)
+
+- Sammel-Einträge im Katalog (Name enthält „(andere…)“) haben Vorrang NACH bestimmten Anbietern und werden je Empfänger getrennt.
+- PDF-Zeilen: Textstücke nach Abstand verbinden (manche Banken speichern einzelne Buchstaben).
+- Zeile mit Datum ohne Betrag direkt unter einer Buchung = Wertstellung → gehört zur Buchung.
+- Nutzer hat oft nur EINEN Monats-PDF → einmalige Lastschriften/Daueraufträge werden (ohne Haken) vorgeschlagen.
+- Test-Auszüge werden mit Playwright als PDF nachgebaut (echte Auszüge des Nutzers nie anfordern/speichern).
+
 ## 2. Bauen & Veröffentlichen
 
 - Repository heißt `marchens1977/Abouebersicht` (GitHub erlaubt kein „Ü“; früher `Abo--bersicht`).
@@ -41,6 +49,7 @@ Android-App (APK) für das Samsung-Smartphone des Nutzers: Kosten aller Abos ver
 | 2026-11-18 | Erste Version: Übersicht, Reiter, Katalog, Kontoauszug-Erkennung, Erinnerungen, Sicherung, APK-Workflow |
 | 2026-11-18 | Neues Logo (ohne Baseball), PDF-Kontoauszug offline, Datenschutz-Sperre (CSP), Umzug auf `main`, Signatur-Passwort eingerichtet |
 | 2026-11-18 | Repository umbenannt in `Abouebersicht`, Links angepasst |
+| 2026-11-18 | Kontoauszug-Erkennung verbessert: Telekom/Vodafone usw. einzeln statt Sammel-„Handyvertrag“, Wertstellungs-Zeilen, Buchstabe-für-Buchstabe-PDFs, Versicherungen + Wohnen & Energie, einmalige Lastschriften, Liste aller gelesenen Abbuchungen |
 
 ## 4. Offene Ideen
 
