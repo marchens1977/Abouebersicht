@@ -1,0 +1,9 @@
+{
+  "appId": "app.abouebersicht.mets",
+  "appName": "Abo-Übersicht",
+  "webDir": "www",
+  "android": { "backgroundColor": "#002D72" },
+  "plugins": {
+    "LocalNotifications": { "iconColor": "#FF5910" }
+  }
+}

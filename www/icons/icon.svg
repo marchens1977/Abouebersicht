@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#002D72"/>
+  <g fill="none" stroke="#FF5910" stroke-width="34" stroke-linecap="round">
+    <!-- oberer Bogen: von links (180°) im Uhrzeigersinn bis rechts oben -->
+    <path d="M 106 256 A 150 150 0 0 1 376 166"/>
+    <!-- unterer Bogen -->
+    <path d="M 406 256 A 150 150 0 0 1 136 346"/>
+  </g>
+  <g fill="#FF5910">
+    <polygon points="418,130 404,222 330,170"/>
+    <polygon points="94,382 108,290 182,342"/>
+  </g>
+  <text x="256" y="304" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="bold" font-size="150" fill="#ffffff">€</text>
+</svg>

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Abo-Übersicht</string>
+    <string name="title_activity_main">Abo-Übersicht</string>
+    <string name="package_name">app.abouebersicht.mets</string>
+    <string name="custom_url_scheme">app.abouebersicht.mets</string>
+</resources>

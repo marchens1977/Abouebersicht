@@ -1,0 +1,91 @@
+# Baut bei jeder Änderung die Android-App (APK) und stellt sie unter "Releases" zum Download bereit.
+name: Android-App bauen
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-build
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+      VERSION_NAME: 1.0.${{ github.run_number }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Versionsnummer eintragen
+        run: sed -i "s/__VERSION__/${VERSION_NAME}/" www/app.js
+
+      - name: Signier-Schlüssel vorbereiten
+        id: schluessel
+        run: |
+          ENC=android/app/release.keystore.enc
+          if [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::warning::Geheimnis KEYSTORE_PASSWORD fehlt – baue mit Wegwerf-Schlüssel (Updates nur nach Deinstallation möglich)."
+            export KEYSTORE_PASSWORD=$(openssl rand -hex 16)
+            echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            keytool -genkeypair -keystore android/app/release.keystore -alias abo -keyalg RSA -keysize 2048 \
+              -validity 20000 -storepass "$KEYSTORE_PASSWORD" -keypass "$KEYSTORE_PASSWORD" -dname "CN=Abo-Uebersicht, C=DE"
+            echo "dauerhaft=nein" >> "$GITHUB_OUTPUT"
+          elif [ -f "$ENC" ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$ENC" -out android/app/release.keystore -pass env:KEYSTORE_PASSWORD
+            echo "dauerhaft=ja" >> "$GITHUB_OUTPUT"
+          else
+            # Erster Lauf mit Passwort: dauerhaften Schlüssel erzeugen und verschlüsselt im Repository ablegen
+            keytool -genkeypair -keystore android/app/release.keystore -alias abo -keyalg RSA -keysize 2048 \
+              -validity 20000 -storepass "$KEYSTORE_PASSWORD" -keypass "$KEYSTORE_PASSWORD" -dname "CN=Abo-Uebersicht, C=DE"
+            openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in android/app/release.keystore -out "$ENC" -pass env:KEYSTORE_PASSWORD
+            git config user.name "github-actions[bot]"
+            git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+            git add -f "$ENC"
+            git commit -m "Verschlüsselten App-Schlüssel ablegen [skip ci]"
+            git push
+            echo "dauerhaft=ja" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Web-Teil in die App kopieren
+        run: npx cap sync android
+
+      - name: APK bauen
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk ../Abo-Uebersicht.apk
+
+      - name: Zum Download bereitstellen (Release)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          HINWEIS=""
+          if [ "${{ steps.schluessel.outputs.dauerhaft }}" = "nein" ]; then
+            HINWEIS=$'\n\n⚠️ Testversion mit Wegwerf-Schlüssel: Zum Aktualisieren alte App vorher deinstallieren (vorher Sicherung machen!).'
+          fi
+          gh release create "v${VERSION_NAME}" Abo-Uebersicht.apk \
+            --target "${GITHUB_SHA}" \
+            --title "Abo-Übersicht ${VERSION_NAME}" \
+            --latest \
+            --notes "📲 **Installieren:** Auf dem Handy unten bei *Assets* auf **Abo-Uebersicht.apk** tippen, herunterladen, öffnen und *Installieren* wählen. Beim ersten Mal fragt Android, ob Chrome Apps installieren darf → erlauben.${HINWEIS}"

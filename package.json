@@ -1,0 +1,21 @@
+{
+  "name": "abo-uebersicht",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Abo-Übersicht – Kosten aller Abos im Blick (Android-App)",
+  "scripts": {
+    "sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/filesystem": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/share": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "pdfjs-dist": "^6.5.438"
+  }
+}

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#002D72">
+  <!-- Datenschutz: Die App darf nur mit sich selbst reden. Einzige Ausnahme: Prüfen auf neue Version bei GitHub. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self' https://api.github.com; form-action 'none'; base-uri 'none'">
+  <title>Abo-Übersicht</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="kopf">
+    <div class="kopf-titel">
+      <img src="icons/icon-192.png" alt="" class="kopf-logo">
+      <div>
+        <h1>Abo-Übersicht</h1>
+        <p class="kopf-sub" id="kopf-sub">Alle Abos im Blick</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Übersicht -->
+    <section id="view-start" class="ansicht aktiv"></section>
+    <!-- Abos mit Reitern -->
+    <section id="view-abos" class="ansicht">
+      <div class="reiter" id="reiter"></div>
+      <div class="suche-zeile">
+        <input type="search" id="abo-suche" placeholder="🔍 Abo suchen …">
+        <select id="abo-sort" aria-label="Sortieren">
+          <option value="preis">Teuerste zuerst</option>
+          <option value="name">Name A–Z</option>
+          <option value="datum">Nächste Abbuchung</option>
+        </select>
+      </div>
+      <div id="abo-summe" class="reiter-summe"></div>
+      <div id="abo-liste" class="liste"></div>
+    </section>
+    <!-- Abos finden -->
+    <section id="view-finden" class="ansicht"></section>
+    <!-- Mehr -->
+    <section id="view-mehr" class="ansicht"></section>
+  </main>
+
+  <button class="fab" id="fab" aria-label="Abo hinzufügen">+</button>
+
+  <nav class="unten">
+    <button data-view="start" class="aktiv"><span>🏠</span>Übersicht</button>
+    <button data-view="abos"><span>📋</span>Abos</button>
+    <button data-view="finden"><span>🔎</span>Finden</button>
+    <button data-view="mehr"><span>⚙️</span>Mehr</button>
+  </nav>
+
+  <!-- Formular zum Anlegen/Bearbeiten -->
+  <div class="schleier" id="schleier"></div>
+  <div class="blatt" id="blatt" role="dialog" aria-modal="true">
+    <div class="blatt-griff"></div>
+    <div id="blatt-inhalt"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="katalog.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
