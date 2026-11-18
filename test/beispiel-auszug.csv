@@ -1,0 +1,17 @@
+"Kontoumsätze Girokonto";
+"Zeitraum: 01.11.2025 - 15.11.2026";
+;
+"Buchungstag";"Valuta";"Auftraggeber/Empfänger";"Buchungstext";"Verwendungszweck";"Betrag (EUR)"
+"03.11.2026";"03.11.2026";"NETFLIX INTERNATIONAL B.V.";"Folgelastschrift";"Netflix Monatsabo";"-13,99"
+"03.10.2026";"03.10.2026";"NETFLIX INTERNATIONAL B.V.";"Folgelastschrift";"Netflix Monatsabo";"-13,99"
+"03.09.2026";"03.09.2026";"NETFLIX INTERNATIONAL B.V.";"Folgelastschrift";"Netflix Monatsabo";"-13,99"
+"15.10.2026";"15.10.2026";"PayPal Europe S.a.r.l. et Cie S.C.A";"Folgelastschrift";"PP.1234 . OPENAI *CHATGPT SUBSCR";"-23,00"
+"15.09.2026";"15.09.2026";"PayPal Europe S.a.r.l. et Cie S.C.A";"Folgelastschrift";"PP.1234 . OPENAI *CHATGPT SUBSCR";"-23,00"
+"05.11.2026";"05.11.2026";"Spotify AB";"Lastschrift";"Spotify Premium";"-12,99"
+"05.10.2026";"05.10.2026";"Spotify AB";"Lastschrift";"Spotify Premium";"-12,99"
+"01.11.2026";"01.11.2026";"Fitnessclub Sonnenschein";"Lastschrift";"Mitgliedsbeitrag";"-24,90"
+"01.10.2026";"01.10.2026";"Fitnessclub Sonnenschein";"Lastschrift";"Mitgliedsbeitrag";"-24,90"
+"01.09.2026";"01.09.2026";"Fitnessclub Sonnenschein";"Lastschrift";"Mitgliedsbeitrag";"-24,90"
+"07.11.2026";"07.11.2026";"REWE Markt";"Kartenzahlung";"REWE SAGT DANKE";"-54,12"
+"28.10.2026";"28.10.2026";"Arbeitgeber GmbH";"Gutschrift";"Gehalt";"2.500,00"
+"12.11.2026";"12.11.2026";"Anthropic, PBC";"Kartenzahlung";"CLAUDE.AI SUBSCRIPTION";"-21,42"

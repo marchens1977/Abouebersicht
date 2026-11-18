@@ -4,7 +4,7 @@ name: Android-App bauen
 on:
   push:
     branches: [main]
-    paths-ignore: ['**.md']
+    paths-ignore: ['**.md', 'test/**']
   workflow_dispatch:
 
 permissions:

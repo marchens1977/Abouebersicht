@@ -1,0 +1,53 @@
+const { chromium } = require('playwright');
+(async () => {
+  const S = process.argv[2];
+  const b = await chromium.launch();
+  const p = await b.newPage({ viewport: { width: 400, height: 860 }, deviceScaleFactor: 1 });
+  const fehler = [];
+  p.on('pageerror', (e) => fehler.push(e.message));
+  p.on('console', (m) => { if (m.type() === 'error') fehler.push(m.text()); });
+  await p.goto('http://localhost:8765/');
+  await p.screenshot({ path: S + '/1-leer.png' });
+  await p.click('text=Abos automatisch finden');
+  await p.setInputFiles('#csv-datei', require('path').join(__dirname, 'beispiel-auszug.csv'));
+  await p.waitForSelector('#funde-uebernehmen');
+  await p.screenshot({ path: S + '/2-funde.png', fullPage: true });
+  console.log(await p.$$eval('.fund-text', (e) => e.map((x) => x.innerText.replace(/\n/g, ' | '))));
+  await p.check('[data-fund]:not(:checked)');  // Fitnessclub auch nehmen
+  await p.click('#funde-uebernehmen');
+  await p.waitForTimeout(400);
+  await p.screenshot({ path: S + '/3-start.png', fullPage: true });
+  // Abo per Hand: Testphase
+  await p.click('#fab');
+  await p.fill('#f-name', 'Disney+');
+  await p.dispatchEvent('#f-name', 'change');
+  await p.click('#f-status [data-s=testphase]');
+  const t = new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10);
+  await p.fill('#f-test', t);
+  await p.click('#f-speichern');
+  await p.waitForTimeout(400);
+  // Downgrade Spotify -> kostenlos
+  await p.click('nav [data-view=abos]');
+  await p.click('.abo:has-text("Spotify")');
+  await p.click('#f-status [data-s=kostenlos]');
+  await p.click('#f-speichern');
+  await p.waitForTimeout(400);
+  await p.click('.abo:has-text("Spotify")');
+  await p.waitForTimeout(400);
+  await p.screenshot({ path: S + '/4-verlauf.png' });
+  await p.click('#f-abbrechen');
+  await p.waitForTimeout(400);
+  await p.click('#reiter [data-reiter=ki]');
+  await p.screenshot({ path: S + '/5-abos-ki.png' });
+  await p.click('nav [data-view=start]');
+  await p.click('[data-zr=jahr]');
+  await p.screenshot({ path: S + '/6-start-jahr.png', fullPage: true });
+  await p.click('nav [data-view=mehr]');
+  await p.screenshot({ path: S + '/7-mehr.png', fullPage: true });
+  const kopf = await p.textContent('#kopf-sub');
+  console.log('Kopf:', kopf);
+  const ok = kopf.includes('83,31') && fehler.length === 0;
+  console.log(ok ? 'OK: Bedienung' : 'FEHLER: Bedienung', fehler);
+  if (!ok) process.exitCode = 1;
+  await b.close();
+})();
