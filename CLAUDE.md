@@ -10,7 +10,7 @@ Android-App (APK) für das Samsung-Smartphone des Nutzers: Kosten aller Abos ver
 - Funktionen: Übersicht (Kosten pro Tag/Woche/Monat/Jahr, Kreisdiagramm, Hinweise, nächste 30 Tage, „Was wäre, wenn“),
   Abos mit Reitern pro Kategorie, Status (Bezahlt/Kostenlos/Testphase/Pausiert/Gekündigt) mit automatischem **Verlauf**,
   Kontoauszug-Import (**PDF**, CSV oder eingefügter Text) erkennt bekannte Dienste + regelmäßige Zahlungen,
-  Erinnerungen (Local Notifications, nur APK), Sicherung als JSON, Update-Hinweis über GitHub-Releases.
+  Erinnerungen (Local Notifications, nur APK), Sicherung als JSON, **Update-Suche** (siehe 2b).
 - Design: New-York-Mets-Farben Blau `#002D72` / Orange `#FF5910` (gilt für alle Apps des Nutzers).
   **Kein Baseball-Motiv** – nur die Farben. Logo: zwei kreisende Pfeile (Verlängerung) um ein €-Zeichen (`www/icons/icon.svg`).
 
@@ -42,6 +42,23 @@ Android-App (APK) für das Samsung-Smartphone des Nutzers: Kosten aller Abos ver
 - Lokal gibt es kein Android-SDK (dl.google.com gesperrt) → nur Browser-Test mit Playwright (`www/` per `python3 -m http.server`).
 - Icons: Vorlagen in `assets/`, erzeugt mit `npx @capacitor/assets generate --android`.
 
+## 2b. Update-Suche (übernommen aus dem Fisch-Fang-Tracker)
+
+- Nur in der Android-App (APK). Code in `www/app.js`, Abschnitt „Update-Suche“ (`sucheUpdate`, `autoUpdateSuche`, `bauNummer`).
+- Fragt `api.github.com/repos/marchens1977/Abouebersicht/releases/latest` ab (sendet keine Daten, erlaubt in der CSP).
+- **Versionsnummern (einheitlich, bitte so lassen):** Release-Name `v1.0.N`, App-Version `1.0.N` (der Workflow ersetzt
+  `__VERSION__` in `app.js` und setzt `versionName`), N = Laufnummer des Workflows = `versionCode`.
+  Verglichen wird nur die letzte Zahl N (`bauNummer`, versteht auch `app-v1.0.N`), damit 1.0.10 neuer als 1.0.9 ist.
+- **Von selbst:** beim Öffnen und beim Zurückkehren in die App, höchstens 1x pro Stunde (Zeitpunkt in `localStorage`,
+  Schlüssel `abo-uebersicht-update`, getrennt von den Abos/Sicherungen). Ist das Release neuer und hat die Datei
+  `Abo-Uebersicht.apk` → Fenster „Update verfügbar“ → „Jetzt herunterladen“ öffnet den APK-Download im Browser →
+  Anleitung „So geht es weiter“. Ohne Internet: still.
+- **Von Hand:** ⚙️ Mehr → Karte „App“ → Knopf **„Nach Updates suchen“**. Meldet „Du hast schon die neueste Version (1.0.N)“
+  oder „Update-Suche nicht möglich. Bitte Internet prüfen.“ Der Link „Neueste App herunterladen“ bleibt zusätzlich.
+- **Entscheidung:** keine Selbst-Installation (Erlaubnis `REQUEST_INSTALL_PACKAGES`) – beim Fisch-Fang-Tracker hat
+  Google Play Protect die App deshalb als „schädlich“ blockiert. Installiert wird über die heruntergeladene Datei.
+- Die Seite „⚙️ Mehr“ gilt als Einstellungen der App.
+
 ## 2a. Tests & Hilfsprogramme
 
 **Regel (vom Nutzer für alle Projekte):**
@@ -60,6 +77,7 @@ Ausgabe je Test `OK: …` oder `FEHLER: …`, am Ende `ALLE PRÜFUNGEN OK`.
 | `test/bedienung.test.js` | CSV-Auszug (`test/beispiel-auszug.csv`) einlesen, Abos übernehmen, Testphase anlegen, Downgrade → Verlauf, Reiter, Summen (83,31 €/Monat), keine JS-Fehler |
 | `test/pdf-einfach.test.js` | Baut einen einfachen PDF-Auszug (Datum ohne Jahr, Empfänger in Folgezeile), erkennt Netflix/Claude/Spotify, „Verwerfen“ speichert nichts, **keine Verbindung nach außen** |
 | `test/pdf-schwierig.test.js` | 3-seitiges PDF, teils Buchstabe für Buchstabe, Wertstellungs-Zeilen: alle 12 Abbuchungen gelesen; Telekom, Vodafone, Allianz, HUK, Disney+ (PayPal), Stadtwerke, Rundfunk einzeln erkannt |
+| `test/update.test.js` | Update-Suche ohne echtes Internet (GitHub-Antwort nachgespielt, Android-App vorgetäuscht, installiert = 1.0.7): Versionsnummern lesen (`v1.0.N`, `app-v1.0.N`, 1.0.10 > 1.0.9); neuere Version → Fenster beim Start, Link zur APK, „Später“, Hinweis in „Mehr“, Download + Anleitung; nur 1x pro Stunde von selbst; gleiche/ältere Version und Release ohne APK → kein Angebot; kein Internet → Meldung; Browser-Version → kein Knopf, keine Anfrage |
 
 Änderungen nur in `test/` lösen keinen neuen App-Bau aus.
 
@@ -68,6 +86,14 @@ Ausgabe je Test `OK: …` oder `FEHLER: …`, am Ende `ALLE PRÜFUNGEN OK`.
 - Erinnerungen (Benachrichtigungen) kommen am Handy an; Erlaubnis-Abfrage erscheint.
 - Echter Kontoauszug der eigenen Bank als PDF: werden alle Abos gefunden? (Bank-Name nennen, dann Aufbau nachbauen.)
 - Sicherung erstellen/laden über das Teilen-Menü des Handys.
+
+**Abhak-Liste Update-Suche (am Handy):**
+- [ ] Version mit Update-Suche (1.0.8 oder neuer) einmalig von Hand installieren (Link unten in diesem Tagebuch) – die alte 1.0.7 kennt den Knopf noch nicht.
+- [ ] ⚙️ Mehr → Karte „App“: Version 1.0.N steht da, Knopf „🔄 Nach Updates suchen“ → Meldung „Du hast schon die neueste Version (1.0.N)“.
+- [ ] Flugmodus an → Knopf → Meldung „Update-Suche nicht möglich. Bitte Internet prüfen.“
+- [ ] Beim nächsten neuen Release: App öffnen → Fenster „Update verfügbar“ (neue + eigene Version) → „Jetzt herunterladen“ öffnet den Download im Browser → Anleitung erscheint.
+- [ ] Auf die heruntergeladene Datei tippen → „Aktualisieren“ → App startet mit neuer Version, alle Abos sind noch da.
+- [ ] Play Protect meckert nicht (höchstens „App scannen“).
 
 ## 3. Verlauf
 
@@ -78,12 +104,14 @@ Ausgabe je Test `OK: …` oder `FEHLER: …`, am Ende `ALLE PRÜFUNGEN OK`.
 | 2026-11-18 | Repository umbenannt in `Abouebersicht`, Links angepasst |
 | 2026-11-18 | Kontoauszug-Erkennung verbessert: Telekom/Vodafone usw. einzeln statt Sammel-„Handyvertrag“, Wertstellungs-Zeilen, Buchstabe-für-Buchstabe-PDFs, Versicherungen + Wohnen & Energie, einmalige Lastschriften, Liste aller gelesenen Abbuchungen |
 | 2026-11-18 | Regel „Tests ins Projekt“; vorhandene Prüfungen nach `test/` übernommen (`bash test/alle-tests.sh`) |
+| 2026-11-19 | Update-Suche wie im Fisch-Fang-Tracker: von selbst beim Öffnen (1x/Stunde) + Knopf „Nach Updates suchen“ in ⚙️ Mehr, Fenster „Update verfügbar“ mit Download und Anleitung; Test `test/update.test.js` |
 
 ## 4. Offene Ideen
 
 - Eigene Kategorien anlegen
 - Widget für den Startbildschirm
 - Fremdwährungen (USD-Abos) mit Umrechnung
+- Update-Suche am echten Handy noch ungetestet (siehe Abhak-Liste in 2a); ob „Jetzt herunterladen“ in Capacitor wirklich den Browser öffnet, muss sich dort zeigen
 
 ## 5. Zusammenarbeit
 
