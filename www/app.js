@@ -851,6 +851,7 @@ function renderMehr() {
       <h2>📲 App</h2>
       <p>Version: <b>${APP_VERSION.startsWith('__') ? 'Entwicklung' : esc(APP_VERSION)}</b></p>
       <div id="update-info"></div>
+      ${nativ ? `<button class="knopf" id="m-update">🔄 Nach Updates suchen</button>` : ''}
       <a class="knopf hell" href="https://github.com/${REPO}/releases/latest/download/Abo-Uebersicht.apk" target="_blank" rel="noopener">⬇️ Neueste App herunterladen</a>
     </div>
     <div class="karte">
@@ -876,11 +877,12 @@ function renderMehr() {
     } catch { toast('Das ist keine gültige Sicherung'); }
     ev.target.value = '';
   };
+  if (nativ) $('#m-update').onclick = () => sucheUpdate(true);
   $('#m-reset').onclick = () => {
     if (!confirm('Wirklich ALLE Abos löschen? Das kann man nicht rückgängig machen.')) return;
     daten.abos = []; speichern(); render(); toast('Alles gelöscht');
   };
-  pruefeUpdate();
+  zeigeUpdateHinweis();
 }
 
 async function exportiere() {
@@ -901,18 +903,92 @@ async function exportiere() {
   toast('Sicherung gespeichert ✔');
 }
 
-let updateGeprueft = null;
-async function pruefeUpdate() {
-  if (APP_VERSION.startsWith('__') || !istNativ()) return;
+// ---------- Update-Suche (wie im Fisch-Fang-Tracker) ----------
+// Fragt bei GitHub das neueste Release ab (Name "v1.0.N", N = Bau-Nummer) und vergleicht es mit der eigenen Version.
+// Ist es neuer: Fenster „Update verfügbar“ → „Jetzt herunterladen“ lädt die APK im Browser, man tippt auf die Datei → „Aktualisieren“.
+// Bewusst KEINE Selbst-Installation (Erlaubnis REQUEST_INSTALL_PACKAGES) – sonst blockiert Google Play Protect die App.
+const APK_NAME = 'Abo-Uebersicht.apk';
+const UPDATE_SPEICHER = 'abo-uebersicht-update';     // nur Zeitpunkt der letzten Suche + gefundene Version, getrennt von den Abos
+const AUTO_ABSTAND_MS = 60 * 60 * 1000;               // von selbst höchstens 1x pro Stunde
+
+/** "v1.0.7", "app-v1.0.8" oder "1.0.7" → 7 (letzte Zahl = Bau-Nummer). Unlesbar → 0. */
+function bauNummer(text) {
+  const m = String(text || '').trim().match(/(\d+)\s*$/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+function updateStand() {
+  try { return JSON.parse(localStorage.getItem(UPDATE_SPEICHER)) || {}; } catch { return {}; }
+}
+let updateLaeuft = false;
+
+/** manuell = true: auch „neueste Version“ bzw. Fehler anzeigen. */
+async function sucheUpdate(manuell) {
+  if (updateLaeuft) return;
+  if (APP_VERSION.startsWith('__')) { if (manuell) toast('Entwicklungsversion – keine Update-Suche'); return; }
+  updateLaeuft = true;
+  if (manuell) toast('Suche nach Update …');
   try {
-    if (!updateGeprueft) {
-      const r = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`);
-      updateGeprueft = (await r.json()).tag_name || '';
+    const r = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const rel = await r.json();
+    const neu = bauNummer(rel.tag_name);
+    const apk = (rel.assets || []).find((a) => a && a.name === APK_NAME);
+    const url = apk && apk.browser_download_url;
+    const stand = { letzteSuche: Date.now() };
+    if (neu > bauNummer(APP_VERSION) && url) {
+      stand.neu = '1.0.' + neu; stand.url = url;
+      localStorage.setItem(UPDATE_SPEICHER, JSON.stringify(stand));
+      zeigeUpdateHinweis();
+      zeigeUpdateFenster(stand.neu, url);
+    } else {
+      localStorage.setItem(UPDATE_SPEICHER, JSON.stringify(stand));
+      zeigeUpdateHinweis();
+      if (manuell) toast(`Du hast schon die neueste Version (${APP_VERSION}).`);
     }
-    const neu = updateGeprueft.replace(/^v/, '');
-    const box = $('#update-info');
-    if (box && neu && neu !== APP_VERSION) box.innerHTML = `<p class="hinweis">🆕 Version <b>${esc(neu)}</b> ist verfügbar! Lade sie unten herunter und installiere sie über die alte.</p>`;
-  } catch { /* offline – egal */ }
+  } catch {
+    if (manuell) toast('Update-Suche nicht möglich. Bitte Internet prüfen.');
+  } finally {
+    updateLaeuft = false;
+  }
+}
+
+/** Beim Start und beim Zurückkehren in die App: von selbst nachsehen (höchstens 1x pro Stunde, nur in der Android-App). */
+function autoUpdateSuche() {
+  if (!istNativ() || APP_VERSION.startsWith('__')) return;
+  if (Date.now() - (updateStand().letzteSuche || 0) < AUTO_ABSTAND_MS) return;
+  sucheUpdate(false);
+}
+
+/** Kleiner Hinweis in „Mehr“, solange eine neuere Version bekannt ist. */
+function zeigeUpdateHinweis() {
+  const box = $('#update-info');
+  if (!box) return;
+  const st = updateStand();
+  box.innerHTML = st.neu && bauNummer(st.neu) > bauNummer(APP_VERSION)
+    ? `<div class="hinweis">🆕 <div>Version <b>${esc(st.neu)}</b> ist verfügbar! Tippe auf „Nach Updates suchen“.</div></div>` : '';
+}
+
+function zeigeUpdateFenster(neu, url) {
+  $('#blatt-inhalt').innerHTML = `
+    <h2>🆕 Update verfügbar</h2>
+    <p>Eine neue Version der App ist da (<b>${esc(neu)}</b>, du hast ${esc(APP_VERSION)}).</p>
+    <p class="leise">Deine Abos bleiben beim Update erhalten.</p>
+    <a class="knopf orange" id="u-laden" href="${esc(url)}" target="_blank" rel="noopener">⬇️ Jetzt herunterladen</a>
+    <button class="knopf hell" id="u-spaeter">Später</button>`;
+  $('#u-spaeter').onclick = schliesseBlatt;
+  $('#u-laden').onclick = () => setTimeout(() => {
+    $('#blatt-inhalt').innerHTML = `
+      <h2>So geht es weiter</h2>
+      <ol class="schritte">
+        <li>Warten, bis der Download fertig ist.</li>
+        <li>Auf die heruntergeladene Datei tippen (oben in der Benachrichtigung).</li>
+        <li>„Aktualisieren“ wählen.</li>
+      </ol>
+      <p class="leise">Deine Abos bleiben erhalten.</p>
+      <button class="knopf" id="u-ok">Verstanden</button>`;
+    $('#u-ok').onclick = schliesseBlatt;
+  }, 300);
+  oeffneBlatt();
 }
 
 // ---------- Benachrichtigungen (nur in der Android-App) ----------
@@ -964,5 +1040,8 @@ window.Capacitor?.Plugins?.App?.addListener?.('backButton', () => {
   else if (!$('#view-start').classList.contains('aktiv')) zeige('start');
   else window.Capacitor.Plugins.App.exitApp();
 });
+// Zurück in die App (z. B. nach dem Download): wieder nach Updates schauen (höchstens 1x pro Stunde)
+window.Capacitor?.Plugins?.App?.addListener?.('resume', autoUpdateSuche);
 render();
 planeErinnerungen();
+autoUpdateSuche();
