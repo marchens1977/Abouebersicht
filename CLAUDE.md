@@ -59,6 +59,13 @@ Android-App (APK) für das Samsung-Smartphone des Nutzers: Kosten aller Abos ver
   Google Play Protect die App deshalb als „schädlich“ blockiert. Installiert wird über die heruntergeladene Datei.
 - Die Seite „⚙️ Mehr“ gilt als Einstellungen der App.
 
+- **Play Protect (Lehre 2026-11-19):** 1.0.8 wurde beim Installieren blockiert („kennt von diesem Entwickler noch keine
+  anderen Apps“). Ursache NICHT die Update-Suche: 1.0.7 und 1.0.8 haben dieselben Erlaubnisse und dieselbe Signatur
+  (mit `androguard` verglichen). Lösung für den Nutzer: im Fenster „Weitere Details“ → „Trotzdem installieren“.
+  Falls es mal nicht angeboten wird: Play Store → Profilbild → Play Protect → ⚙️ → „Apps mit Play Protect scannen“
+  kurz aus, installieren, sofort wieder an. Idee falls es stört: Erlaubnisse `SCHEDULE_EXACT_ALARM` und
+  `RECEIVE_BOOT_COMPLETED` (vom Erinnerungs-Baustein) entfernen – nur nach Rückfrage, Wirkung nicht garantiert.
+
 ## 2a. Tests & Hilfsprogramme
 
 **Regel (vom Nutzer für alle Projekte):**
@@ -88,12 +95,14 @@ Ausgabe je Test `OK: …` oder `FEHLER: …`, am Ende `ALLE PRÜFUNGEN OK`.
 - Sicherung erstellen/laden über das Teilen-Menü des Handys.
 
 **Abhak-Liste Update-Suche (am Handy):**
-- [ ] Version mit Update-Suche (1.0.8 oder neuer) einmalig von Hand installieren (Link unten in diesem Tagebuch) – die alte 1.0.7 kennt den Knopf noch nicht.
-- [ ] ⚙️ Mehr → Karte „App“: Version 1.0.N steht da, Knopf „🔄 Nach Updates suchen“ → Meldung „Du hast schon die neueste Version (1.0.N)“.
-- [ ] Flugmodus an → Knopf → Meldung „Update-Suche nicht möglich. Bitte Internet prüfen.“
+- [x] Version mit Update-Suche (1.0.8 oder neuer) einmalig von Hand installieren (Link unten in diesem Tagebuch) – die alte 1.0.7 kennt den Knopf noch nicht.
+- [x] ⚙️ Mehr → Karte „App“: Version 1.0.N steht da, Knopf „🔄 Nach Updates suchen“ → Meldung „Du hast schon die neueste Version (1.0.N)“.
+- [x] Flugmodus an → Knopf → Meldung „Update-Suche nicht möglich. Bitte Internet prüfen.“
 - [ ] Beim nächsten neuen Release: App öffnen → Fenster „Update verfügbar“ (neue + eigene Version) → „Jetzt herunterladen“ öffnet den Download im Browser → Anleitung erscheint.
 - [ ] Auf die heruntergeladene Datei tippen → „Aktualisieren“ → App startet mit neuer Version, alle Abos sind noch da.
-- [ ] Play Protect meckert nicht (höchstens „App scannen“).
+- [ ] Play Protect: Bei 1.0.8 kam „App wurde zum Schutz deines Geräts blockiert“ → „Weitere Details“ → „Trotzdem installieren“ hat geklappt. Beim nächsten Update beobachten, ob das wieder kommt.
+
+(Stand 2026-11-19: Nutzer hat 1.0.8 installiert, Knopf + Meldungen funktionieren. Offen ist nur der Ablauf beim nächsten echten Release.)
 
 ## 3. Verlauf
 
@@ -104,6 +113,7 @@ Ausgabe je Test `OK: …` oder `FEHLER: …`, am Ende `ALLE PRÜFUNGEN OK`.
 | 2026-11-18 | Repository umbenannt in `Abouebersicht`, Links angepasst |
 | 2026-11-18 | Kontoauszug-Erkennung verbessert: Telekom/Vodafone usw. einzeln statt Sammel-„Handyvertrag“, Wertstellungs-Zeilen, Buchstabe-für-Buchstabe-PDFs, Versicherungen + Wohnen & Energie, einmalige Lastschriften, Liste aller gelesenen Abbuchungen |
 | 2026-11-18 | Regel „Tests ins Projekt“; vorhandene Prüfungen nach `test/` übernommen (`bash test/alle-tests.sh`) |
+| 2026-11-19 | Nutzer hat 1.0.8 installiert (Play Protect: „Trotzdem installieren“), Update-Knopf und Meldungen am Handy bestätigt |
 | 2026-11-19 | Update-Suche wie im Fisch-Fang-Tracker: von selbst beim Öffnen (1x/Stunde) + Knopf „Nach Updates suchen“ in ⚙️ Mehr, Fenster „Update verfügbar“ mit Download und Anleitung; Test `test/update.test.js` |
 
 ## 4. Offene Ideen
@@ -111,7 +121,7 @@ Ausgabe je Test `OK: …` oder `FEHLER: …`, am Ende `ALLE PRÜFUNGEN OK`.
 - Eigene Kategorien anlegen
 - Widget für den Startbildschirm
 - Fremdwährungen (USD-Abos) mit Umrechnung
-- Update-Suche am echten Handy noch ungetestet (siehe Abhak-Liste in 2a); ob „Jetzt herunterladen“ in Capacitor wirklich den Browser öffnet, muss sich dort zeigen
+- Update-Suche: beim nächsten echten Release prüfen, ob das Fenster „Update verfügbar“ kommt und „Jetzt herunterladen“ in der App den Browser öffnet (Abhak-Liste in 2a)
 
 ## 5. Zusammenarbeit
 
